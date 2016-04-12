@@ -1,0 +1,138 @@
+\documentclass{article}
+
+\usepackage{fullpage,amssymb,amsthm,amsmath}
+
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\indicator}{\mathbf{1}}
+\DeclareMathOperator{\Regret}{Regret}
+\DeclareMathOperator{\Exp}{\mathbf{E}}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\argmax}{argmax}
+
+\begin{document}
+
+\title{Quantile Bandits}
+\author{Francesco Orabona \and D\'avid P\'al}
+
+\maketitle
+
+\section{Introduction}
+
+The non-stochastic multi-armed problem is online problem where an algorithm in
+round $t$ chooses an \emph{action}/\emph{arm} $I_t \in \{1,2,\dots,K\}$ and
+gets to observe its reward $r_{t,I_t} \in [0,1]$. The goal of the algorithm is
+to maximize its reward $\sum_{t=1}^T r_{t,I_t}$ accumulated over $T$ rounds.
+Each arm $i$ in each round $t$ has an associated reward $r_{t,i} \in [0,1]$,
+which we assume were chosen before round one.\footnote{This assumption
+is called the model with oblivious adversary.}
+
+Let $\Delta_K = \{ x \in \R^K ~:~ x \ge 0, \norm{x}_1 = 1 \}$ be the
+$K$-dimensional probability simplex. For any probability vector $u \in
+\Delta_K$, we consider a (hypothetical) strategy that in each round $t$ chooses
+arm randomly from $u$. It's expected reward after $T$ rounds is $\sum_{t=1}^T
+\langle r_t, u \rangle$.
+
+We compare an algorithm with a strategy associated with $u \in \Delta_K$.
+The difference of algorithm's reward and strategy's reward is called \emph{regret
+with respect to $u$}, and it is defined as
+$$
+\Regret_T(u) = \sum_{t=1}^T \langle r_t, u \rangle - \sum_{t=1}^T r_{t,I_t} \; .
+$$
+The regret with respect to best $u$ is denoted as
+$$
+\Regret_T =  \sup_{u \in \Delta_K} \Regret_T(u) \; .
+$$
+Most algorithms for multi-armed bandit are randomized, hence algorithm's
+choices of arms $I_1, I_2, \dots, I_T$ as well as $\Regret_T(u)$ and
+$\Regret_T$ are random variables. To evaluate performance of an algorithm,
+we might thus use $\Exp[\Regret_T(u)]$ and $\Exp[\Regret_T]$.
+
+For any $K$ and any $T$, there exist an algorithm such that $\Exp[\Regret_T] \le
+100 \sqrt{KT}$. This a great result, but we like to improve it. Specifically,
+for any $K$ and any $T$, we wish to design an algorithm such that
+\begin{equation}
+\label{equation:generic-adaptive-bound}
+\forall u \in \Delta_N \qquad \qquad \Exp[\Regret_T(u)] \le F(u) \sqrt{T} \; ,
+\end{equation}
+where $F:\Delta_K \to \R_+$ is a suitable function. Such result would be
+interesting if $\sup_{u \in \Delta_K} F(u) \le O(\sqrt{K})$ and for certain
+$u$, $F(u)$ would be much smaller than $O(K)$. We refer to a bound of the
+form~\eqref{equation:generic-adaptive-bound} as an adaptive bound.
+
+\section{Quantile Bound}
+
+To get an idea what type of adaptive bound might be possible. Consider the
+following idea: Instead of having an algorithm compete with the best of the $K$
+arms, it might compete only with best $(\epsilon K)$-th best arm, for some
+$\epsilon \in (0,1)$. An almost equivalent way of stating this, the algorithm
+can be competing with all competitors $u \in \Delta_K$ such that
+$\norm{u}_\infty \le \frac{1}{\epsilon K}$.
+
+A simple algorithm that achieves the first goal to simply draw $N =
+\lceil \frac{\log T}{\epsilon} \rceil$ arms $j_1, j_2, \dots, j_N \in \{1,2, \dots, K\}$
+independently uniformly at random before the first round, and use a Bubeck's
+algorithm on this set of arms. It is not hard to see that the expected regret
+of this algorithm w.r.t. $(\epsilon K)$-th best arm is
+$O(\sqrt{N T}) = O \left(\sqrt{\frac{1}{\epsilon} T \log T} \right)$.
+
+To see this, note that with probability $1 - (1-\epsilon)^N \ge 1 -
+e^{-\epsilon N} \ge 1 - 1/T$, one of top $\epsilon K$ best arms is in set
+$\{j_1, j_2, \dots, j_N\}$.  If the none of the top $\epsilon K$ arms is in the
+set, we use the upper bound regret trivially by $T$; this happens with
+probability at most $1/T$.
+
+Ingoring this extra $\log T$ factor, we can interpret $\sqrt{1/\epsilon}$ as
+$F(u)$ for $u \in \Delta_K$ which is uniform over the top $\epsilon K$ arms.
+Of course, the problem with this algorithm is that it needs to know $\epsilon$.
+In other words, the set of $u$'s with which the algorithm is competing is only
+a subset of $\Delta_K$.
+
+\section{Potential Based Algorithms}
+
+We consider algorithms based on \emph{Follow The Regularized Leader} algorithm.
+The algorithm maintains an estimate of the sum of rewards $\widetilde R_t =
+(\widetilde R_{t,1}, \widetilde R_{t,2}, \dots, \widetilde R_{t,K})$ where $\widetilde R_{t,i}$
+is an estimate of $\sum_{s=1}^t r_{t,i}$.
+In round $t$, the algorithm chooses a distribution $p_t \in \Delta_K$ which
+is defined as
+$$
+p_t = \argmin_{p \in \Delta_K} \left( \Phi_t(u) - \langle \widetilde R_{t-1}, p \rangle \right) \; .
+$$
+Then, it chooses an arm $I_t$ according to $p_t$ and observes the reward $r_{t,I_I}$.
+Based on $p_t, I_t, r_{t,I_t}$, the algorithm constructs an estimate of the reward vector $r_t = (r_{t,1}, r_{t,2}, \dots, r_{t,K})$.
+The estimate is $\widetilde r_t = (\widetilde r_{t,1}, \widetilde r_{t,2}, \dots, \widetilde r_{t,K})$
+where the $i$-th coordinate is
+$$
+\widetilde r_{t,i} = \frac{r_{t,i} \indicator[i=I_t]}{p_{t,i}}  \; .
+$$
+Finally, the algorithm updates $\widetilde R_t = \widetilde R_{t-1} + \widetilde r_t$.
+
+The function $\Phi_t:\Delta_K \to \R$ is called a \emph{regularizer}. We assume
+that is convex. A potential based algorithm is specified by the sequence
+of regularizers $\{\Phi_t\}_{t=1}^\infty$. The following key lemma is used to bound
+algorithm's regret.
+
+\begin{lemma}
+Algorithm based on sequence of regularizers $\{\Phi_t\}_{t=1}^\infty$ satisfies
+for any $u \in \Delta_N$ and any $T \ge 0$,
+$$
+\sum_{t=1}^T \langle \widetilde r_t, u \rangle - \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle
+\le \Phi_{T+1}(u) + \Phi_1^*(0) + \sum_{t=1}^T \Phi_{t+1}^*(\widetilde R_t) - \Phi_t^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \; .
+$$
+\end{lemma}
+
+\begin{proof}
+We have
+\begin{align*}
+\sum_{t=1}^T \Phi_{t+1}^*(\widetilde R_t) - \Phi_t^*(\widetilde R_{t-1})
+& = \Phi_{T+1}^*(\widetilde R_t) - \Phi_1^*(0) \\
+& \ge \langle \widetilde R_T, u \rangle -  \Phi_{T+1}(u) - \Phi_1^*(0)
+\end{align*}
+Subtracting $\sum_{t=1}^T \langle \widetilde r_t, p_t \rangle$ from both sides
+and rearranging the terms finishes the proof.
+\end{proof}
+
+\end{document}
