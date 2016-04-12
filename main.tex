@@ -25,9 +25,10 @@ The non-stochastic multi-armed problem is online problem where an algorithm in
 round $t$ chooses an \emph{action}/\emph{arm} $I_t \in \{1,2,\dots,K\}$ and
 gets to observe its reward $r_{t,I_t} \in [0,1]$. The goal of the algorithm is
 to maximize its reward $\sum_{t=1}^T r_{t,I_t}$ accumulated over $T$ rounds.
-Each arm $i$ in each round $t$ has an associated reward $r_{t,i} \in [0,1]$,
-which we assume were chosen before round one.\footnote{This assumption
-is called the model with oblivious adversary.}
+Each arm $i$ in each round $t$ has an associated reward $r_{t,i} \in [0,1]$.
+For simplicity, we assume the all rewards for all arms were chosen before the
+first round. This assumption is called the model with \emph{oblivious
+adversary}.
 
 Let $\Delta_K = \{ x \in \R^K ~:~ x \ge 0, \norm{x}_1 = 1 \}$ be the
 $K$-dimensional probability simplex. For any probability vector $u \in
@@ -59,7 +60,7 @@ for any $K$ and any $T$, we wish to design an algorithm such that
 \end{equation}
 where $F:\Delta_K \to \R_+$ is a suitable function. Such result would be
 interesting if $\sup_{u \in \Delta_K} F(u) \le O(\sqrt{K})$ and for certain
-$u$, $F(u)$ would be much smaller than $O(K)$. We refer to a bound of the
+$u$, $F(u)$ would be much smaller than $O(\sqrt{K})$. We refer to a bound of the
 form~\eqref{equation:generic-adaptive-bound} as an adaptive bound.
 
 \section{Quantile Bound}
@@ -84,13 +85,13 @@ $\{j_1, j_2, \dots, j_N\}$.  If the none of the top $\epsilon K$ arms is in the
 set, we use the upper bound regret trivially by $T$; this happens with
 probability at most $1/T$.
 
-Ingoring this extra $\log T$ factor, we can interpret $\sqrt{1/\epsilon}$ as
+Ignoring this extra $\log T$ factor, we can interpret $\sqrt{1/\epsilon}$ as
 $F(u)$ for $u \in \Delta_K$ which is uniform over the top $\epsilon K$ arms.
 Of course, the problem with this algorithm is that it needs to know $\epsilon$.
 In other words, the set of $u$'s with which the algorithm is competing is only
-a subset of $\Delta_K$.
+a subset of $\Delta_K$ that depends on $\epsilon$.
 
-\section{Potential Based Algorithms}
+\section{FTRL Based Algorithms}
 
 We consider algorithms based on \emph{Follow The Regularized Leader} algorithm.
 The algorithm maintains an estimate of the sum of rewards $\widetilde R_t =
@@ -99,7 +100,7 @@ is an estimate of $\sum_{s=1}^t r_{t,i}$.
 In round $t$, the algorithm chooses a distribution $p_t \in \Delta_K$ which
 is defined as
 $$
-p_t = \argmin_{p \in \Delta_K} \left( \Phi_t(u) - \langle \widetilde R_{t-1}, p \rangle \right) \; .
+p_t = \argmin_{p \in \Delta_K} \left( \Phi(u) - \langle \widetilde R_{t-1}, p \rangle \right) \; .
 $$
 Then, it chooses an arm $I_t$ according to $p_t$ and observes the reward $r_{t,I_I}$.
 Based on $p_t, I_t, r_{t,I_t}$, the algorithm constructs an estimate of the reward vector $r_t = (r_{t,1}, r_{t,2}, \dots, r_{t,K})$.
@@ -110,29 +111,36 @@ $$
 $$
 Finally, the algorithm updates $\widetilde R_t = \widetilde R_{t-1} + \widetilde r_t$.
 
-The function $\Phi_t:\Delta_K \to \R$ is called a \emph{regularizer}. We assume
-that is convex. A potential based algorithm is specified by the sequence
-of regularizers $\{\Phi_t\}_{t=1}^\infty$. The following key lemma is used to bound
-algorithm's regret.
+The function $\Phi:\Delta_K \to \R$ is called a \emph{regularizer}. We assume
+that it is convex.  The following key lemma is used to bound algorithm's
+regret. The lemma is stated in terms of Fenchel conjugate of $\Phi$ which is
+defined as $\Phi^*(\theta) = \sup_{u \in \Delta_N} \langle \theta, u \rangle -
+\Phi(u)$.
 
 \begin{lemma}
-Algorithm based on sequence of regularizers $\{\Phi_t\}_{t=1}^\infty$ satisfies
+Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
 for any $u \in \Delta_N$ and any $T \ge 0$,
 $$
 \sum_{t=1}^T \langle \widetilde r_t, u \rangle - \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle
-\le \Phi_{T+1}(u) + \Phi_1^*(0) + \sum_{t=1}^T \Phi_{t+1}^*(\widetilde R_t) - \Phi_t^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \; .
+\le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \; .
 $$
 \end{lemma}
 
 \begin{proof}
 We have
 \begin{align*}
-\sum_{t=1}^T \Phi_{t+1}^*(\widetilde R_t) - \Phi_t^*(\widetilde R_{t-1})
-& = \Phi_{T+1}^*(\widetilde R_t) - \Phi_1^*(0) \\
-& \ge \langle \widetilde R_T, u \rangle -  \Phi_{T+1}(u) - \Phi_1^*(0)
+\sum_{t=1}^T \Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1})
+& = \Phi^*(\widetilde R_t) - \Phi^*(0) \\
+& \ge \langle \widetilde R_T, u \rangle -  \Phi(u) - \Phi^*(0)
 \end{align*}
 Subtracting $\sum_{t=1}^T \langle \widetilde r_t, p_t \rangle$ from both sides
 and rearranging the terms finishes the proof.
 \end{proof}
+
+% \begin{align*}
+% \Exp[\Regret_T(u)]
+% & = \sum_{t=1}^T \langle r_t, u \rangle - \Exp\left[ \sum_{t=1}^T r_{t,I_t} \right] \\
+% & = \Exp\left[\sum_{t=1}^T \langle \widetilde r_t, u \rangle \right] - \Exp\left[ \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle \right] \\
+% \end{align*}
 
 \end{document}
