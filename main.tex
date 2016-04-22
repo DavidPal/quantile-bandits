@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 
 \usepackage{fullpage,amssymb,amsthm,amsmath}
 
@@ -21,12 +21,12 @@
 
 \section{Introduction}
 
-The non-stochastic multi-armed problem is online problem where an algorithm in
-round $t$ chooses an \emph{action}/\emph{arm} $I_t \in \{1,2,\dots,K\}$ and
+The non-stochastic multi-armed problem is an online problem where an algorithm
+in round $t$ chooses an \emph{action}/\emph{arm} $I_t \in \{1,2,\dots,K\}$ and
 gets to observe its reward $r_{t,I_t} \in [0,1]$. The goal of the algorithm is
 to maximize its reward $\sum_{t=1}^T r_{t,I_t}$ accumulated over $T$ rounds.
 Each arm $i$ in each round $t$ has an associated reward $r_{t,i} \in [0,1]$.
-For simplicity, we assume the all rewards for all arms were chosen before the
+For simplicity, we assume that all rewards for all arms were chosen before the
 first round. This assumption is called the model with \emph{oblivious
 adversary}.
 
@@ -81,9 +81,12 @@ $O(\sqrt{N T}) = O \left(\sqrt{\frac{1}{\epsilon} T \log T} \right)$.
 
 To see this, note that with probability $1 - (1-\epsilon)^N \ge 1 -
 e^{-\epsilon N} \ge 1 - 1/T$, one of top $\epsilon K$ best arms is in set
-$\{j_1, j_2, \dots, j_N\}$.  If the none of the top $\epsilon K$ arms is in the
-set, we use the upper bound regret trivially by $T$; this happens with
-probability at most $1/T$.
+$\{j_1, j_2, \dots, j_N\}$. Conditioned on this event, the expected regret
+w.r.t.  any arm in $\{j_1, j_2, \dots, j_N\}$ is $O(\sqrt{NT}) =
+O(\sqrt{\frac{1}{\epsilon}} T \log T)$.  If the none of the top $\epsilon K$
+arms is in the set $\{j_1, j_2, \dots, j_N\}$, we upper bound regret by $T$.
+Since this happens with probability at most $1/T$, the contribution towards
+expected regret is $1$.
 
 Ignoring this extra $\log T$ factor, we can interpret $\sqrt{1/\epsilon}$ as
 $F(u)$ for $u \in \Delta_K$ which is uniform over the top $\epsilon K$ arms.
@@ -118,12 +121,14 @@ defined as $\Phi^*(\theta) = \sup_{u \in \Delta_N} \langle \theta, u \rangle -
 \Phi(u)$.
 
 \begin{lemma}
+\label{lemma:ftrl-regret}
 Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
 for any $u \in \Delta_N$ and any $T \ge 0$,
-$$
+\begin{equation}
+\label{equation:ftrl-regret}
 \sum_{t=1}^T \langle \widetilde r_t, u \rangle - \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle
 \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \; .
-$$
+\end{equation}
 \end{lemma}
 
 \begin{proof}
@@ -137,10 +142,52 @@ Subtracting $\sum_{t=1}^T \langle \widetilde r_t, p_t \rangle$ from both sides
 and rearranging the terms finishes the proof.
 \end{proof}
 
-% \begin{align*}
-% \Exp[\Regret_T(u)]
-% & = \sum_{t=1}^T \langle r_t, u \rangle - \Exp\left[ \sum_{t=1}^T r_{t,I_t} \right] \\
-% & = \Exp\left[\sum_{t=1}^T \langle \widetilde r_t, u \rangle \right] - \Exp\left[ \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle \right] \\
-% \end{align*}
+\begin{lemma}
+\label{lemma:ftrl-expected-regret}
+Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
+for any $u \in \Delta_N$ and any $T \ge 0$,
+\begin{align*}
+\Exp[\Regret_T(u)]
+& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \right] \\
+& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle r_t, p_t \rangle \right] \; .
+\end{align*}
+\end{lemma}
+
+\begin{proof}
+We apply Lemma~\ref{lemma:ftrl-regret} and take expectation of both sides of \eqref{equation:ftrl-regret}.
+The lemma will follow. We just need to verify three equalities
+\begin{align}
+\Exp[\langle \widetilde r_t, u \rangle] & = \langle r_t, u \rangle \label{equation:expectation-1} \\
+\Exp[\langle \widetilde r_t, p_t \rangle] & = \Exp[r_{t,I_t}] = \Exp[\langle r_t, p_t \rangle] \label{equation:expectation-2} \; .
+\end{align}
+
+Equality \eqref{equation:expectation-1} holds since
+\begin{align*}
+\Exp[\langle \widetilde r_t, u \rangle ~|~ I_1, I_2, \dots, I_{t-1}]
+& = \sum_{i=1}^T \Exp[\widetilde r_{t,i} ~|~ I_1, I_2, \dots, I_{t-1} ] \cdot u_i \\
+& = \sum_{i=1}^T \Exp\left[  \frac{r_{t,i} \indicator[I_t=i]}{p_{t,i}} ~\middle|~ I_1, I_2, \dots, I_{t-1} \right] \cdot u_i \\
+& = \sum_{i=1}^T \frac{r_{t,i}}{p_{t,i}} \cdot \Exp\left[ \indicator[I_t=i] ~\middle|~ I_1, I_2, \dots, I_{t-1} \right] \cdot u_i \\
+& = \sum_{i=1}^T \frac{r_{t,i}}{p_{t,i}} \cdot p_{t,i}  \cdot u_i \\
+& = \langle r_t, u \rangle \\
+\end{align*}
+where we used that (the random value of) $p_t$ is determined by $I_1, I_2, \dots, I_{t-1}$.
+
+The first equality in \eqref{equation:expectation-2} holds since
+$$
+\langle \widetilde r_t, p_t \rangle
+= \sum_{i=1}^K \widetilde r_{t,i} \cdot p_{t,i}
+= \sum_{i=1}^K \frac{r_{t,i} \indicator[i=I_t]}{p_{t,i}} \cdot p_{t,i}
+= \sum_{i=1}^K r_{t,i} \indicator[i=I_t]
+= r_{t,I_t} \; .
+$$
+The second equality in \eqref{equation:expectation-2} holds since
+\begin{align*}
+\Exp\left[ \langle r_t, p_t \rangle ~|~ I_1, I_2, \dots, I_{t-1} \right]
+& = \langle r_t, p_t \rangle \\
+& = \sum_{i=1}^K r_{t,i} \cdot \Pr\left[ I_t = i ~|~ I_1, I_2, \dots, I_{t-1} \right] \\
+& = \Exp\left[r_{t,I_t} ~|~ I_1, I_2, \dots, I_t \right]
+\end{align*}
+where we used that (the random value of) $p_t$ is determined by $I_1, I_2, \dots, I_{t-1}$.
+\end{proof}
 
 \end{document}
