@@ -83,7 +83,7 @@ To see this, note that with probability $1 - (1-\epsilon)^N \ge 1 -
 e^{-\epsilon N} \ge 1 - 1/T$, one of top $\epsilon K$ best arms is in set
 $\{j_1, j_2, \dots, j_N\}$. Conditioned on this event, the expected regret
 w.r.t.  any arm in $\{j_1, j_2, \dots, j_N\}$ is $O(\sqrt{NT}) =
-O(\sqrt{\frac{1}{\epsilon}} T \log T)$.  If the none of the top $\epsilon K$
+O\left(\sqrt{\frac{1}{\epsilon} T \log T}\right)$.  If none of the top $\epsilon K$
 arms is in the set $\{j_1, j_2, \dots, j_N\}$, we upper bound regret by $T$.
 Since this happens with probability at most $1/T$, the contribution towards
 expected regret is $1$.
@@ -127,15 +127,15 @@ for any $u \in \Delta_N$ and any $T \ge 0$,
 \begin{equation}
 \label{equation:ftrl-regret}
 \sum_{t=1}^T \langle \widetilde r_t, u \rangle - \sum_{t=1}^T \langle \widetilde r_t, p_t \rangle
-\le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \; .
+\le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Phi^*\left(\widetilde R_t\right) - \Phi^*\left(\widetilde R_{t-1}\right) - \langle \widetilde r_t, p_t \rangle \; .
 \end{equation}
 \end{lemma}
 
 \begin{proof}
 We have
 \begin{align*}
-\sum_{t=1}^T \Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1})
-& = \Phi^*(\widetilde R_t) - \Phi^*(0) \\
+\sum_{t=1}^T \Phi^*\left(\widetilde R_t\right) - \Phi^*\left(\widetilde R_{t-1}\right)
+& = \Phi^*\left(\widetilde R_t \right) - \Phi^*(0) \\
 & \ge \langle \widetilde R_T, u \rangle -  \Phi(u) - \Phi^*(0)
 \end{align*}
 Subtracting $\sum_{t=1}^T \langle \widetilde r_t, p_t \rangle$ from both sides
@@ -148,8 +148,8 @@ Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
 for any $u \in \Delta_N$ and any $T \ge 0$,
 \begin{align*}
 \Exp[\Regret_T(u)]
-& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle \widetilde r_t, p_t \rangle \right] \\
-& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^*(\widetilde R_t) - \Phi^*(\widetilde R_{t-1}) - \langle r_t, p_t \rangle \right] \; .
+& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^* \left(\widetilde R_t\right) - \Phi^*\left(\widetilde R_{t-1}\right) - \langle \widetilde r_t, p_t \rangle \right] \\
+& \le \Phi(u) + \Phi^*(0) + \sum_{t=1}^T \Exp\left[\Phi^* \left(\widetilde R_t\right) - \Phi^*\left(\widetilde R_{t-1}\right) - \langle r_t, p_t \rangle \right] \; .
 \end{align*}
 \end{lemma}
 
@@ -189,5 +189,48 @@ The second equality in \eqref{equation:expectation-2} holds since
 \end{align*}
 where we used that (the random value of) $p_t$ is determined by $I_1, I_2, \dots, I_{t-1}$.
 \end{proof}
+
+\section{One-Dimensional Regularizers}
+
+We consider regularizers $\Phi:\Delta_K \to \R$ of the form
+$$
+\Phi(u) = \sum_{i=1}^K \phi(u_i)
+$$
+where $\phi:\R \to \R$ is a convex differentiable function.
+
+The Fenchel conjugate of the function is
+$$
+\Phi^*(\theta) = \sup_{u \in \Delta_K} \langle \theta, u \rangle - \Phi(u) \; .
+$$
+To compute the Fenchel conjugate, we need to solve the optimization problem
+$$
+\begin{aligned}
+& \underset{u \in \R^K}{\text{maximize}}
+& & \langle \theta, u \rangle - \Phi(u) \\
+& \text{subject to} & & \sum_{i=1}^K u_i = 1 \\
+& & & u_i \ge 0 \\
+\end{aligned}
+$$
+Substituing $\Phi(u) = \sum_{i=1}^K \phi(u_i)$, we get
+$$
+\begin{aligned}
+& \underset{u \in \R^K}{\text{maximize}}
+& & \sum_{i=1}^K \theta_i u_i - \phi(u_i) \\
+& \text{subject to} & & \sum_{i=1}^K u_i = 1 \\
+& & & u_i \ge 0 \\
+\end{aligned}
+$$
+We can solve the problem using KKT conditions, which are
+\begin{align*}
+& \theta_i - \phi'(u_i) = \lambda - \alpha_i & \text{(stationarity)} \\
+& \sum_{i=1}^N u_i = 1 & \text{(primal feasibility)} \\
+& u_i \ge 0 & \text{(primal feasibility)} \\
+& \alpha_i \ge 0 & \text{(dual feasibility)} \\
+& \alpha_i u_i = 0 & \text{(complementary slackness)} \\
+\end{align*}
+From the first equation, we see that
+$$
+u_i = (\phi')^{-1}\left(\theta_i - \lambda + \alpha_i \right) \; .
+$$
 
 \end{document}
