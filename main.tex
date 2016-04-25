@@ -72,12 +72,12 @@ $\epsilon \in (0,1)$. An almost equivalent way of stating this, the algorithm
 can be competing with all competitors $u \in \Delta_K$ such that
 $\norm{u}_\infty \le \frac{1}{\epsilon K}$.
 
-A simple algorithm that achieves the first goal to simply draw $N =
-\lceil \frac{\log T}{\epsilon} \rceil$ arms $j_1, j_2, \dots, j_N \in \{1,2, \dots, K\}$
-independently uniformly at random before the first round, and use a Bubeck's
-algorithm on this set of arms. It is not hard to see that the expected regret
-of this algorithm w.r.t. $(\epsilon K)$-th best arm is
-$O(\sqrt{N T}) = O \left(\sqrt{\frac{1}{\epsilon} T \log T} \right)$.
+A simple algorithm that achieves the first goal to simply draw $N = \lceil
+\frac{\log T}{\epsilon} \rceil$ arms $j_1, j_2, \dots, j_N \in \{1,2, \dots,
+K\}$ independently uniformly at random before the first round, and use a
+Bubeck's algorithm on this set of arms. It is not hard to see that the expected
+regret of this algorithm w.r.t. $(\epsilon K)$-th best arm is $O(\sqrt{N T}) =
+O \left(\sqrt{\frac{1}{\epsilon} T \log T} \right)$.
 
 To see this, note that with probability $1 - (1-\epsilon)^N \ge 1 -
 e^{-\epsilon N} \ge 1 - 1/T$, one of top $\epsilon K$ best arms is in set
@@ -122,7 +122,7 @@ defined as $\Phi^*(\theta) = \sup_{u \in \Delta_N} \langle \theta, u \rangle -
 
 \begin{lemma}
 \label{lemma:ftrl-regret}
-Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
+Algorithm based on a regularizer $\Phi:\Delta_K \to \R$ satisfies
 for any $u \in \Delta_N$ and any $T \ge 0$,
 \begin{equation}
 \label{equation:ftrl-regret}
@@ -144,7 +144,7 @@ and rearranging the terms finishes the proof.
 
 \begin{lemma}
 \label{lemma:ftrl-expected-regret}
-Algorithm based on sequence of a regularizer $\Phi:\Delta_K \to \R$ satisfies
+Algorithm based on a regularizer $\Phi:\Delta_K \to \R$ satisfies
 for any $u \in \Delta_N$ and any $T \ge 0$,
 \begin{align*}
 \Exp[\Regret_T(u)]
@@ -190,14 +190,20 @@ The second equality in \eqref{equation:expectation-2} holds since
 where we used that (the random value of) $p_t$ is determined by $I_1, I_2, \dots, I_{t-1}$.
 \end{proof}
 
-\section{One-Dimensional Regularizers}
+\section{Separable Regularizers}
 
-We consider regularizers $\Phi:\Delta_K \to \R$ of the form
+We consider regularizers $\Phi:\Delta_K \to \R$ that are \emph{separable}.
+That means $\Phi$ is of the form
 $$
 \Phi(u) = \sum_{i=1}^K \phi(u_i)
 $$
-where $\phi:\R \to \R$ is a convex differentiable function.
-
+where $\phi:[0,\infty) \to \R$. We will assume that $\phi$
+is a convex twice continuously differentiable
+function such that
+\begin{equation}
+\label{equation:limit}
+\lim_{z \to 0^+} \phi'(z) = -\infty \; .
+\end{equation}
 The Fenchel conjugate of the function is
 $$
 \Phi^*(\theta) = \sup_{u \in \Delta_K} \langle \theta, u \rangle - \Phi(u) \; .
@@ -211,7 +217,7 @@ $$
 & & & u_i \ge 0 \\
 \end{aligned}
 $$
-Substituing $\Phi(u) = \sum_{i=1}^K \phi(u_i)$, we get
+Substituting $\Phi(u) = \sum_{i=1}^K \phi(u_i)$, we get
 $$
 \begin{aligned}
 & \underset{u \in \R^K}{\text{maximize}}
@@ -220,17 +226,88 @@ $$
 & & & u_i \ge 0 \\
 \end{aligned}
 $$
-We can solve the problem using KKT conditions, which are
+We can solve the problem using Karush-Kuhn-Tucker conditions, which are
 \begin{align*}
 & \theta_i - \phi'(u_i) = \lambda - \alpha_i & \text{(stationarity)} \\
 & \sum_{i=1}^N u_i = 1 & \text{(primal feasibility)} \\
 & u_i \ge 0 & \text{(primal feasibility)} \\
 & \alpha_i \ge 0 & \text{(dual feasibility)} \\
-& \alpha_i u_i = 0 & \text{(complementary slackness)} \\
+& \alpha_i u_i = 0 & \text{(complementary slackness)}
 \end{align*}
-From the first equation, we see that
+Stationarity together with \eqref{equation:limit} implies
+that $u_i > 0$. Complementary slackness implies that $\alpha_i = 0$
+and thus
 $$
-u_i = (\phi')^{-1}\left(\theta_i - \lambda + \alpha_i \right) \; .
+u_i = (\phi')^{-1}\left(\theta_i - \lambda \right) \; .
+$$
+
+\section{Negative Tsallis Entropy}
+
+Tsallis entropy of order $\alpha$
+of a probability distribution $p \in \Delta_K$ is
+$$
+S_\alpha(p) = \frac{1}{\alpha - 1} \left(1 - \sum_{i=1}^K p_i^\alpha \right) \; .
+$$
+For $\alpha = 1$, $S_\alpha(p)$ can extended by continuity. It turns
+out that
+$$
+\lim_{\alpha \to 1} S_\alpha(p) = - \sum_{i=1}^N p_i \ln p_i \; .
+$$
+In other words, $S_1(p)$ is the Shannon entropy of $p$.
+
+We will use a negative multiple of Tsallis entropy as the regularizer
+\begin{equation}
+\label{equation:negative-tsallis-entropy-regularizer}
+\Phi(u) = - \eta S_\alpha(u) \; .
+\end{equation}
+The parameter $\eta > 0$ is the learning rate. We will choose $\alpha \in (0,1)$
+and $\eta$ later. The regularizer \eqref{equation:negative-tsallis-entropy-regularizer}
+is separable since it can be written as
+$$
+\Phi(u) = - \eta S_\alpha(u) = \sum_{i=1}^N \phi(u_i)
+\qquad \text{where} \qquad
+\phi(z) = \frac{\eta}{1 - \alpha} \left( z - z^\alpha \right) \; .
+$$
+The derivate $\phi(z)$ is $\phi'(z) = \frac{\eta}{1-\alpha}\left(1 - \alpha z^{\alpha - 1} \right)$
+and thus \eqref{equation:limit} is satisfied for $\alpha \in (0,1)$.
+
+\subsection{Regret Bound}
+
+Abernethy-Lee-Tewari 2016 show that if $r_t \in [-1,0]^K$, then FTRL with regularizer
+\eqref{equation:negative-tsallis-entropy-regularizer} satisfies
+$$
+\Exp\left[\Phi^* \left(\widetilde R_t\right) - \Phi^*\left(\widetilde R_{t-1}\right) - \langle \widetilde r_t, p_t \rangle \right] \le \frac{K^\alpha}{\eta \alpha} \; .
+$$
+Therefore,
+$$
+\Exp[\Regret_T(u)] \le \Phi(u) + \Phi^*(0) + \frac{K^\alpha T}{\eta \alpha} \; .
+$$
+Now,
+\begin{align*}
+\Phi^*(0)
+& = - \min_{u \in \Delta_K} \Phi(u) \\
+& = \max_{u \in \Delta_K} \eta S_\alpha(u) \\
+& = \eta S_\alpha(1/K, 1/K, \dots, 1/K) \\
+& = \eta \frac{1}{\alpha - 1} \left(1 - K^{1-\alpha} \right) \; ,
+\end{align*}
+where we used that by symmetry the maximum of $S_\alpha(\cdot)$ is attained at
+$u = (1/K, 1/K, \dots, 1/K)$.
+\begin{align*}
+\Exp[\Regret_T(u)]
+& \le \Phi(u) + \Phi^*(0) + \frac{N^\alpha T}{\eta \alpha} \\
+& = - \eta S_\alpha(u) + \eta S_\alpha(1/K, 1/K, \dots, 1/K) + \frac{K^\alpha T}{\eta \alpha} \\
+& = \frac{\eta}{1 - \alpha} \left(K^{1-\alpha} - \sum_{i=1}^K u_i^\alpha \right) + \frac{K^\alpha T}{\eta \alpha} \; .
+\end{align*}
+
+Suppose that we want know $u \in \Delta_K$ with which we want to compete.
+The optimal learning rate is
+$$
+\eta = \sqrt{\frac{K^\alpha T (1-\alpha)}{\alpha (K^{1-\alpha} - \sum_{i=1}^K u_i^\alpha)}} \; .
+$$
+and the regret bound becomes
+$$
+\Exp[\Regret_T(u)]
+\le 2\sqrt{\frac{T \cdot K^\alpha \cdot \left( K^{1-\alpha} - \sum_{i=1}^K u_i^\alpha \right) }{\alpha (1-\alpha)}}
 $$
 
 \end{document}
